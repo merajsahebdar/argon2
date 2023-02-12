@@ -58,6 +58,7 @@ type Argon2 struct {
 	parallelism uint8
 	keyLength   uint32
 	hashed      []byte
+	isValid     bool
 }
 
 var _ sql.Scanner = (*Argon2)(nil)
@@ -93,7 +94,9 @@ func (a *Argon2) makeHash(toHash string) {
 // Scan implements sql.Scanner.
 func (a *Argon2) Scan(src interface{}) error {
 	if src == nil {
-		return fmt.Errorf("%w: expected a value", ErrScan)
+		a.isValid = false
+
+		return nil
 	}
 
 	s, ok := src.(string)
@@ -112,11 +115,19 @@ func (a *Argon2) Scan(src interface{}) error {
 
 // Value implements driver.Valuer.
 func (a Argon2) Value() (driver.Value, error) {
+	if !a.isValid {
+		return nil, nil
+	}
+
 	return a.String(), nil
 }
 
 // Encode returns an encoded value of the hash.
 func (a Argon2) String() string {
+	if !a.isValid {
+		return ""
+	}
+
 	return fmt.Sprintf(
 		"$argon2id$v=%d$m=%d,t=%d,p=%d$%s$%s",
 		argon2.Version,
@@ -136,6 +147,7 @@ func (a Argon2) Compare(toCompare string) bool {
 		memory:      a.memory,
 		parallelism: a.parallelism,
 		keyLength:   a.keyLength,
+		isValid:     true,
 	}
 
 	b.makeHash(toCompare)
@@ -150,6 +162,7 @@ func New(toHash string) (Argon2, error) {
 		iterations:  iterations,
 		parallelism: parallelism,
 		keyLength:   keyLength,
+		isValid:     true,
 	}
 
 	err := a.makeSalt()
@@ -213,6 +226,7 @@ func NewByEncoded(encoded string) (Argon2, error) {
 		parallelism: p,
 		keyLength:   uint32(len(hashed)),
 		hashed:      hashed,
+		isValid:     true,
 	}, nil
 }
 

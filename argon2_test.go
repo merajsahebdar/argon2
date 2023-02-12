@@ -48,20 +48,30 @@ func TestArgon2Decoder(t *testing.T) {
 
 func TestArgon2SQLValuer(t *testing.T) {
 	testCases := []struct {
-		args string
+		deps    argon2.Argon2
+		wantNil bool
 	}{
-		{"password"},
-		{"secret"},
+		{argon2.MustNew("password"), false},
+		{argon2.MustNew("secret"), false},
+		{argon2.Argon2{}, true},
 	}
 
 	for idx, testCase := range testCases {
-		a := argon2.MustNew(testCase.args)
-
-		if v, err := a.Value(); err != nil {
+		v, err := testCase.deps.Value()
+		if err != nil {
 			t.Errorf("in case %d error is not expected", idx)
-		} else {
-			if x, ok := v.(string); !ok || x == "" {
-				t.Errorf("in case %d got invalid return value", idx)
+
+			continue
+		}
+
+		switch x := v.(type) {
+		case nil:
+			if !testCase.wantNil {
+				t.Errorf("in case %d expected the return value to not be nil", idx)
+			}
+		case string:
+			if x == "" {
+				t.Errorf("in case %d got zero value", idx)
 			} else {
 				t.Logf("got return value %s", x)
 			}
