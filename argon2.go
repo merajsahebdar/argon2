@@ -48,6 +48,9 @@ var (
 
 	// ErrScan is returned when the given value to scanner cannot be represented as a ULID.
 	ErrScan = errors.New("cannot scan the given value")
+
+	// ErrMismatched is returned when the given value to compare is not the same as the current hashed value.
+	ErrMismatched = errors.New("the given value is not the same as the current hashed value")
 )
 
 // Argon2 provides Argon2 based hashing operations.
@@ -139,8 +142,8 @@ func (a Argon2) String() string {
 	)
 }
 
-// Compare compares the current hash with the given string.
-func (a Argon2) Compare(toCompare string) bool {
+// Compare compares the current hashed value with the given one.
+func (a Argon2) Compare(toCompare string) error {
 	b := &Argon2{
 		salt:        a.salt,
 		iterations:  a.iterations,
@@ -152,7 +155,11 @@ func (a Argon2) Compare(toCompare string) bool {
 
 	b.makeHash(toCompare)
 
-	return subtle.ConstantTimeCompare(a.hashed, b.hashed) == 1
+	if subtle.ConstantTimeCompare(a.hashed, b.hashed) == 1 {
+		return nil
+	}
+
+	return ErrMismatched
 }
 
 // New returns a new argon2.Argon2 by hashing the given string.

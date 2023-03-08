@@ -16,6 +16,14 @@ type User struct {
     Password argon2.Argon2
 }
 
+func (e User) IsPasswordCorrect(toCompare string) bool {
+    if err := e.Password.Compare(toCompare); err != nil {
+        return false
+    }
+
+    return true
+}
+
 func NewUser() *User {
     return &User{
         ID:       1,

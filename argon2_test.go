@@ -39,7 +39,7 @@ func TestArgon2Decoder(t *testing.T) {
 		if a, err := argon2.NewByEncoded(testCase.args); err != nil {
 			t.Errorf("in case %d failed to decode: %s", idx, err)
 		} else {
-			if ok := a.Compare(testCase.want); !ok {
+			if compareErr := a.Compare(testCase.want); compareErr != nil {
 				t.Errorf("in case %d failed to match", idx)
 			}
 		}
@@ -100,7 +100,7 @@ func TestArgon2SQLScanner(t *testing.T) {
 		if err := a.Scan(testCase.args); err != nil {
 			t.Errorf("in case %d failed to decode: %s", idx, err)
 		} else {
-			if ok := a.Compare(testCase.want); !ok {
+			if compareErr := a.Compare(testCase.want); compareErr != nil {
 				t.Errorf("in case %d failed to match", idx)
 			}
 		}
